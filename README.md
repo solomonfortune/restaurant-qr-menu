@@ -82,32 +82,32 @@ After seeding the database, use these demo admin credentials:
 ```text
 qr-menu-system/
 +-- backend/
-¦   +-- config/
-¦   +-- controllers/
-¦   +-- middleware/
-¦   +-- models/
-¦   +-- routes/
-¦   +-- utils/
-¦   +-- .env
-¦   +-- .env.example
-¦   +-- package.json
-¦   +-- seed.js
-¦   +-- server.js
+ï¿½   +-- config/
+ï¿½   +-- controllers/
+ï¿½   +-- middleware/
+ï¿½   +-- models/
+ï¿½   +-- routes/
+ï¿½   +-- utils/
+ï¿½   +-- .env
+ï¿½   +-- .env.example
+ï¿½   +-- package.json
+ï¿½   +-- seed.js
+ï¿½   +-- server.js
 +-- frontend/
-¦   +-- public/
-¦   +-- src/
-¦   ¦   +-- api/
-¦   ¦   +-- components/
-¦   ¦   +-- context/
-¦   ¦   +-- pages/
-¦   ¦   +-- App.jsx
-¦   ¦   +-- index.css
-¦   ¦   +-- index.js
-¦   ¦   +-- main.jsx
-¦   +-- .env
-¦   +-- package.json
-¦   +-- postcss.config.js
-¦   +-- tailwind.config.js
+ï¿½   +-- public/
+ï¿½   +-- src/
+ï¿½   ï¿½   +-- api/
+ï¿½   ï¿½   +-- components/
+ï¿½   ï¿½   +-- context/
+ï¿½   ï¿½   +-- pages/
+ï¿½   ï¿½   +-- App.jsx
+ï¿½   ï¿½   +-- index.css
+ï¿½   ï¿½   +-- index.js
+ï¿½   ï¿½   +-- main.jsx
+ï¿½   +-- .env
+ï¿½   +-- package.json
+ï¿½   +-- postcss.config.js
+ï¿½   +-- tailwind.config.js
 +-- README.md
 ```
 
