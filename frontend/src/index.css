@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-brand-soft font-body text-ink antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.admin-shell {
+  background-image: radial-gradient(circle at top left, rgba(232, 93, 36, 0.12), transparent 30%), radial-gradient(circle at bottom right, rgba(251, 191, 36, 0.12), transparent 25%);
+}
+
+.checkmark-circle {
+  animation: popIn 0.45s ease-out;
+}
+
+@keyframes draw-check {
+  from {
+    stroke-dashoffset: 48;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.checkmark-path {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: draw-check 0.5s ease-out 0.2s forwards;
+}
