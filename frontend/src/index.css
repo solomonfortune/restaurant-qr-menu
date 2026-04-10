@@ -2,13 +2,242 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================================
+   LUXURY BISTRO COLOR PALETTE & DESIGN SYSTEM
+   ============================================================================ */
+
+:root {
+  color-scheme: light;
+  
+  /* Primary Brand Colors */
+  --color-primary: #8B1A1A;        /* Deep burgundy red — main brand color */
+  --color-primary-light: #B94040;  /* Lighter burgundy for hover states */
+  --color-gold: #C9A84C;           /* Aged gold — accents, borders, badges */
+  --color-gold-light: #E8C97A;     /* Lighter gold for shimmer effects */
+  
+  /* Background & Surface Colors */
+  --color-cream: #FDF6EC;          /* Warm cream — main background */
+  --color-cream-dark: #F5E6D0;     /* Slightly darker cream for card backgrounds */
+  --color-white: #FFFFFF;
+  
+  /* Text Colors */
+  --color-espresso: #2C1A0E;       /* Very dark brown — primary text */
+  --color-charcoal: #3D2B1F;       /* Slightly lighter dark brown — body text */
+  --color-muted: #8C7B6B;          /* Warm gray-brown — secondary text */
+  
+  /* Borders & Dividers */
+  --color-divider: #E8D5B7;        /* Warm beige divider lines */
+  
+  /* Shadow System */
+  --shadow-soft: 0 4px 24px rgba(44, 26, 14, 0.10);
+  --shadow-card: 0 8px 32px rgba(44, 26, 14, 0.14);
+  --shadow-float: 0 16px 48px rgba(44, 26, 14, 0.20);
+  
+  /* Dark Mode Variants (togglable) */
+  --dark-cream: #1A1209;
+  --dark-cream-dark: #261A0F;
+  --dark-espresso: #F5E6D0;
+  --dark-charcoal: #E8D5B0;
+  --dark-divider: #3D2B1F;
+  
+  /* Typography */
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'Lato', sans-serif;
+  --font-accent: 'Dancing Script', cursive;
+  --font-mono: 'DM Sans', sans-serif;
+}
+
+/* Dark Mode Toggle */
+body.dark-mode {
+  --color-cream: var(--dark-cream);
+  --color-cream-dark: var(--dark-cream-dark);
+  --color-espresso: var(--dark-espresso);
+  --color-charcoal: var(--dark-charcoal);
+  --color-divider: var(--dark-divider);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  @apply bg-brand-soft font-body text-ink antialiased;
+  @apply antialiased;
+  background-color: var(--color-cream);
+  color: var(--color-espresso);
+  font-family: var(--font-body);
+  transition: background-color 0.3s, color 0.3s;
 }
 
 #root {
   min-height: 100vh;
 }
+
+/* ============================================================================
+   ANIMATION KEYFRAMES
+   ============================================================================ */
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes drawCircle {
+  from {
+    stroke-dashoffset: 283;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes drawCheck {
+  from {
+    stroke-dashoffset: 80;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(110%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(110%);
+    opacity: 0;
+  }
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
 
 .line-clamp-2 {
   display: -webkit-box;
@@ -17,25 +246,140 @@ body {
   overflow: hidden;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Focus Ring Utility */
+.focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: outline 0.2s ease;
+}
+
+.focus-ring:focus {
+  outline-color: var(--color-gold);
+}
+
+/* Skeleton Loader */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-cream-dark) 25%,
+    var(--color-divider) 50%,
+    var(--color-cream-dark) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s infinite;
+}
+
+/* Loading Spinner */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Typography Classes */
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+.font-accent {
+  font-family: var(--font-accent);
+}
+
+/* ============================================================================
+   COMPONENT STYLES
+   ============================================================================ */
+
+.glass-panel {
+  background: linear-gradient(135deg, rgba(255, 248, 240, 0.88), rgba(255, 255, 255, 0.72));
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 24px 80px rgba(56, 33, 14, 0.12);
+  backdrop-filter: blur(18px);
+}
+
+.texture-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.22) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.menu-surface {
+  background:
+    radial-gradient(circle at top left, rgba(232, 93, 36, 0.15), transparent 20%),
+    radial-gradient(circle at bottom right, rgba(248, 199, 88, 0.16), transparent 20%),
+    linear-gradient(140deg, #221813, #3a261d 55%, #241812 100%);
+}
+
 .admin-shell {
-  background-image: radial-gradient(circle at top left, rgba(232, 93, 36, 0.12), transparent 30%), radial-gradient(circle at bottom right, rgba(251, 191, 36, 0.12), transparent 25%);
+  background:
+    radial-gradient(circle at top left, rgba(245, 158, 11, 0.12), transparent 26%),
+    radial-gradient(circle at bottom right, rgba(232, 93, 36, 0.10), transparent 24%),
+    linear-gradient(180deg, #f6efe8 0%, #f8f4ee 38%, #f2ece4 100%);
+}
+
+.stat-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 247, 239, 0.9));
+  border: 1px solid rgba(120, 53, 15, 0.08);
+  box-shadow: 0 18px 45px rgba(51, 31, 17, 0.08);
+}
+
+.admin-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 250, 245, 0.92));
+  border: 1px solid rgba(120, 53, 15, 0.08);
+  box-shadow: 0 20px 50px rgba(51, 31, 17, 0.08);
 }
 
 .checkmark-circle {
   animation: popIn 0.45s ease-out;
 }
 
-@keyframes draw-check {
-  from {
-    stroke-dashoffset: 48;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
 .checkmark-path {
   stroke-dasharray: 48;
   stroke-dashoffset: 48;
   animation: draw-check 0.5s ease-out 0.2s forwards;
+}
+
+/* ============================================================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================================================ */
+
+/* Mobile-first approach */
+@media (max-width: 767px) {
+  body {
+    padding: 0;
+    margin: 0;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .tablet-only {
+    display: none;
+  }
 }
