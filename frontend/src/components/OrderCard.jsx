@@ -1,41 +1,137 @@
-const statusColors = {
-  pending: 'bg-yellow-100 text-yellow-700',
-  confirmed: 'bg-blue-100 text-blue-700',
-  preparing: 'bg-orange-100 text-orange-700',
-  ready: 'bg-green-100 text-green-700',
-  completed: 'bg-stone-200 text-stone-700',
-  cancelled: 'bg-red-100 text-red-700',
+import React from 'react';
+import { timeAgo } from '../utils/timeAgo';
+
+/**
+ * OrderCard Component
+ * Kanban-style card for order management
+ * Displays order details and status change dropdown
+ */
+
+const statusConfig = {
+  pending: { icon: '⏳', color: '#F59E0B', bg: '#FEF3C7' },
+  confirmed: { icon: '✓', color: '#3B82F6', bg: '#DBEAFE' },
+  preparing: { icon: '🍳', color: '#EA580C', bg: '#FFEDD5' },
+  ready: { icon: '✓✓', color: '#16A34A', bg: '#DCFCE7' },
+  completed: { icon: '✓', color: '#6B7280', bg: '#F3F4F6' },
+  cancelled: { icon: '✕', color: '#DC2626', bg: '#FEE2E2' },
 };
 
 const OrderCard = ({ order, onStatusChange }) => {
-  const minutesAgo = Math.max(1, Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60000));
+  const config = statusConfig[order.status] || statusConfig.pending;
 
   return (
-    <article className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
+    <article
+      className="rounded-xl p-4 space-y-3 cursor-pointer transition hover:shadow-lg"
+      style={{
+        backgroundColor: 'var(--color-white)',
+        border: `2px solid var(--color-divider)`,
+        boxShadow: 'var(--shadow-card)',
+      }}
+    >
+      {/* Header: Table + Time */}
+      <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-stone-400">Table {order.tableNumber}</p>
-          <h3 className="mt-1 text-lg font-semibold text-stone-900">UGX {order.totalAmount.toLocaleString()}</h3>
-          <p className="mt-1 text-sm text-stone-500">{minutesAgo} minute(s) ago</p>
+          <p
+            className="text-xs uppercase tracking-widest font-semibold"
+            style={{ color: 'var(--color-gold)' }}
+          >
+            📍 Table {order.tableNumber}
+          </p>
+          <p
+            className="text-xs mt-1"
+            style={{ color: 'var(--color-muted)' }}
+          >
+            {timeAgo(order.createdAt)}
+          </p>
         </div>
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusColors[order.status]}`}>{order.status}</span>
+        <div
+          className="px-3 py-1 rounded-full text-xs font-bold text-center"
+          style={{
+            backgroundColor: config.bg,
+            color: config.color,
+          }}
+        >
+          {config.icon}
+        </div>
       </div>
 
-      <div className="mt-4 space-y-2 text-sm text-stone-600">
-        {order.items.map((item) => (
-          <div key={`${order._id}-${item.menuItem?._id || item.name}`} className="flex items-center justify-between">
-            <span>{item.quantity} x {item.name || item.menuItem?.name}</span>
-            <span>UGX {(item.price * item.quantity).toLocaleString()}</span>
+      {/* Divider */}
+      <div
+        className="h-px"
+        style={{ backgroundColor: 'var(--color-divider)' }}
+      />
+
+      {/* Items List */}
+      <div className="space-y-2">
+        {order.items.map((item, idx) => (
+          <div key={`${order._id}-${idx}`} className="flex items-start justify-between text-sm">
+            <span
+              style={{
+                color: 'var(--color-charcoal)',
+                fontWeight: '500',
+              }}
+            >
+              {item.quantity}×{' '}
+              {item.name || item.menuItem?.name}
+            </span>
+            <span
+              className="font-semibold"
+              style={{ color: 'var(--color-primary)' }}
+            >
+              UGX {(item.price * item.quantity).toLocaleString()}
+            </span>
           </div>
         ))}
       </div>
 
-      {order.customerNote && <p className="mt-4 rounded-2xl bg-brand-soft px-4 py-3 text-sm text-stone-600">Note: {order.customerNote}</p>}
+      {/* Total */}
+      <div
+        className="px-3 py-2 rounded-lg"
+        style={{
+          backgroundColor: 'var(--color-cream-dark)',
+          borderLeft: '3px solid var(--color-gold)',
+        }}
+      >
+        <p
+          className="font-display font-bold"
+          style={{ color: 'var(--color-primary)' }}
+        >
+          UGX {order.totalAmount.toLocaleString()}
+        </p>
+      </div>
 
-      <select value={order.status} onChange={(event) => onStatusChange(order._id, event.target.value)} className="mt-4 w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-brand">
-        {['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'].map((status) => (
-          <option key={status} value={status}>{status}</option>
-        ))}
+      {/* Customer Note */}
+      {order.customerNote && (
+        <div
+          className="p-2 rounded-lg text-xs italic"
+          style={{
+            backgroundColor: 'var(--color-cream-dark)',
+            color: 'var(--color-charcoal)',
+          }}
+        >
+          💬 {order.customerNote}
+        </div>
+      )}
+
+      {/* Status Dropdown */}
+      <select
+        value={order.status}
+        onChange={(e) => onStatusChange(order._id, e.target.value)}
+        className="w-full px-3 py-2 rounded-lg text-sm font-semibold transition"
+        style={{
+          backgroundColor: config.bg,
+          color: config.color,
+          border: `2px solid ${config.color}`,
+          cursor: 'pointer',
+        }}
+      >
+        {['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'].map(
+          (status) => (
+            <option key={status} value={status}>
+              {statusConfig[status].icon} {status.toUpperCase()}
+            </option>
+          )
+        )}
       </select>
     </article>
   );

@@ -1,28 +1,36 @@
 const dotenv = require('dotenv');
-const path = require('path');
-dotenv.config(); 
+dotenv.config();
 const connectDB = require('./config/db');
 const User = require('./models/User');
 const Category = require('./models/Category');
 const MenuItem = require('./models/MenuItem');
 const Table = require('./models/Table');
+const Order = require('./models/Order');
+
+const DEMO_EMAIL = 'admin@digitaldiner.com';
 
 const seedData = async () => {
   try {
     console.log('Connecting to database...');
     await connectDB();
 
-    await Promise.all([
-      User.deleteMany({ email: 'admin@digitaldiner.com' }),
-      Category.deleteMany({}),
-      MenuItem.deleteMany({}),
-      Table.deleteMany({}),
-    ]);
+    const existingDemoUser = await User.findOne({ email: DEMO_EMAIL });
+
+    if (existingDemoUser) {
+      await Promise.all([
+        Category.deleteMany({ owner: existingDemoUser._id }),
+        MenuItem.deleteMany({ owner: existingDemoUser._id }),
+        Table.deleteMany({ owner: existingDemoUser._id }),
+        Order.deleteMany({ owner: existingDemoUser._id }),
+      ]);
+
+      await User.deleteOne({ _id: existingDemoUser._id });
+    }
 
     const user = await User.create({
       name: 'Test Restaurant',
       restaurantName: 'The Digital Diner',
-      email: 'admin@digitaldiner.com',
+      email: DEMO_EMAIL,
       password: 'password123',
     });
 
