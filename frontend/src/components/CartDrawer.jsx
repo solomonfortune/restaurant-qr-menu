@@ -3,127 +3,325 @@ import { useCart } from '../context/CartContext';
 import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 
+const formatPrice = (price) =>
+  new Intl.NumberFormat('en-UG', {
+    style: 'currency',
+    currency: 'UGX',
+    minimumFractionDigits: 0,
+  }).format(price);
+
 function CartDrawer() {
-  const { items, isCartOpen, closeCart, totalPrice, tableNumber, ownerId, clearCart, updateQuantity } = useCart();
-  const [customerNote, setCustomerNote] = useState('');
-  const [loading, setLoading] = useState(false);
+  const {
+    items,
+    isCartOpen,
+    closeCart,
+    totalPrice,
+    tableNumber,
+    ownerId,
+    clearCart,
+    updateQuantity,
+  } = useCart();
+
+  const [customerNote, setCustomerNote]   = useState('');
+  const [loading, setLoading]             = useState(false);
+  const [placing, setPlacing]             = useState(false); // overlay animation
+  const [error, setError]                 = useState('');
   const navigate = useNavigate();
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-UG', {
-      style: 'currency',
-      currency: 'UGX',
-      minimumFractionDigits: 0
-    }).format(price);
-  };
+  const serviceFee   = Math.round(totalPrice * 0.05);
+  const grandTotal   = totalPrice + serviceFee;
 
   const handlePlaceOrder = async () => {
     if (items.length === 0) return;
-    
+    setError('');
     setLoading(true);
+
     try {
-      const orderItems = items.map(item => ({
+      const orderItems = items.map((item) => ({
         menuItemId: item._id,
-        quantity: item.quantity
+        quantity: item.quantity,
       }));
 
       await api.post('/orders', {
         tableNumber,
         ownerId,
         items: orderItems,
-        customerNote
+        customerNote,
       });
 
-      clearCart();
-      closeCart();
-      navigate('/order-success');
-    } catch (error) {
-      console.error('Order error:', error);
-      alert('Failed to place order. Please try again.');
-    } finally {
+      /* Show the "sending to kitchen" overlay before navigating */
       setLoading(false);
+      setPlacing(true);
+      setTimeout(() => {
+        clearCart();
+        closeCart();
+        navigate(`/order-success?table=${tableNumber}`);
+      }, 1800);
+    } catch (err) {
+      setLoading(false);
+      setError(err.response?.data?.message || 'Failed to place order. Please try again.');
     }
   };
 
   if (!isCartOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50">
-      <div
-        className="absolute inset-0 bg-black bg-opacity-50"
-        onClick={closeCart}
-      />
-      <div className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-xl overflow-y-auto">
-        <div className="p-4 flex items-center justify-between border-b">
-          <h2 className="text-xl font-bold">Your Order</h2>
+    <div className="cart-overlay" role="dialog" aria-modal="true" aria-label="Your order">
+
+      {/* Backdrop — click to close */}
+      <div className="absolute inset-0" onClick={closeCart} />
+
+      {/* Slide-in panel */}
+      <div className="cart-panel">
+
+        {/* ── Header ───────────────────────────────────────── */}
+        <div
+          className="flex items-center justify-between px-5 py-4 flex-shrink-0"
+          style={{
+            borderBottom: '1px solid var(--color-divider)',
+            borderTop: '4px solid var(--color-primary)',
+          }}
+        >
+          <div>
+            <h2
+              className="font-display text-xl"
+              style={{ color: 'var(--color-espresso)' }}
+            >
+              Your Order
+            </h2>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>
+              📍 Table {tableNumber || '--'}
+            </p>
+          </div>
           <button
             onClick={closeCart}
-            className="text-gray-500 hover:text-gray-700"
+            aria-label="Close cart"
+            className="w-9 h-9 rounded-full flex items-center justify-center transition hover:scale-110 focus-gold"
+            style={{
+              background: 'var(--color-cream-dark)',
+              color: 'var(--color-charcoal)',
+              fontSize: '18px',
+            }}
           >
             ✕
           </button>
         </div>
 
-        <div className="flex items-center justify-between px-4 py-2 bg-orange-50">
-          <span className="text-gray-600">Table {tableNumber}</span>
-        </div>
-
-        <div className="p-4 space-y-4">
-          {items.map(item => (
-            <div key={item._id} className="flex items-center gap-3 border-b pb-3">
-              <div className="flex-1">
-                <h4 className="font-medium">{item.name}</h4>
-                <p className="text-gray-500 text-sm">{formatPrice(item.price)}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => updateQuantity(item._id, item.quantity - 1)}
-                  className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-md"
-                >
-                  −
-                </button>
-                <span className="w-8 text-center">{item.quantity}</span>
-                <button
-                  onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                  className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-md"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          ))}
+        {/* ── Items list ───────────────────────────────────── */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
 
           {items.length === 0 && (
-            <p className="text-center text-gray-500 py-8">Your cart is empty</p>
-          )}
-
-          <div className="border-t pt-4">
-            <label className="text-gray-600 text-sm mb-2 block">Add a note (optional)</label>
-            <textarea
-              value={customerNote}
-              onChange={(e) => setCustomerNote(e.target.value)}
-              placeholder="Any special requests..."
-              className="w-full p-3 border rounded-lg resize-none h-20"
-            />
-          </div>
-
-          {items.length > 0 && (
-            <div className="border-t pt-4">
-              <div className="flex items-center justify-between text-lg font-bold mb-4">
-                <span>Total</span>
-                <span>{formatPrice(totalPrice)}</span>
-              </div>
+            <div className="text-center py-16 animate-fade-up">
+              <div className="text-5xl mb-3 animate-float">🛒</div>
+              <p className="font-display text-lg" style={{ color: 'var(--color-espresso)' }}>
+                Your cart is empty
+              </p>
+              <p className="text-sm mt-1" style={{ color: 'var(--color-muted)' }}>
+                Add some delicious dishes to get started
+              </p>
               <button
-                onClick={handlePlaceOrder}
-                disabled={loading}
-                className="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-orange-700 transition-colors disabled:opacity-50"
+                onClick={closeCart}
+                className="btn-outline-gold mt-5 text-sm px-5 py-2"
               >
-                {loading ? 'Placing Order...' : 'Place Order'}
+                Browse Menu
               </button>
             </div>
           )}
+
+          {items.map((item, i) => (
+            <div
+              key={item._id}
+              className="flex items-center gap-3 pb-3 animate-fade-up"
+              style={{
+                borderBottom: '1px solid var(--color-divider)',
+                animationDelay: `${i * 0.05}s`,
+              }}
+            >
+              {/* Thumbnail */}
+              {item.image ? (
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
+                />
+              ) : (
+                <div
+                  className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+                  style={{ background: 'var(--color-cream-dark)' }}
+                >
+                  🍽️
+                </div>
+              )}
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <p
+                  className="font-display text-sm font-semibold truncate"
+                  style={{ color: 'var(--color-espresso)' }}
+                >
+                  {item.name}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>
+                  {formatPrice(item.price)} each
+                </p>
+              </div>
+
+              {/* Qty controls + line total */}
+              <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                <p
+                  className="font-display text-sm font-bold"
+                  style={{ color: 'var(--color-primary)' }}
+                >
+                  {formatPrice(item.price * item.quantity)}
+                </p>
+                <div
+                  className="flex items-center rounded-full"
+                  style={{
+                    background: 'var(--color-cream-dark)',
+                    border: '1.5px solid var(--color-divider)',
+                  }}
+                >
+                  <button
+                    onClick={() => updateQuantity(item._id, item.quantity - 1)}
+                    aria-label="Decrease quantity"
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-white text-sm font-bold transition active:scale-90"
+                    style={{ background: item.quantity === 1 ? '#DC2626' : 'var(--color-primary)' }}
+                  >
+                    {item.quantity === 1 ? '🗑' : '−'}
+                  </button>
+                  <span
+                    className="w-7 text-center text-sm font-bold font-display"
+                    style={{ color: 'var(--color-espresso)' }}
+                  >
+                    {item.quantity}
+                  </span>
+                  <button
+                    onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                    aria-label="Increase quantity"
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-white text-sm font-bold transition active:scale-90"
+                    style={{ background: 'var(--color-primary)' }}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
+
+        {/* ── Footer ───────────────────────────────────────── */}
+        {items.length > 0 && (
+          <div
+            className="flex-shrink-0 px-5 py-4 space-y-3"
+            style={{ borderTop: '1px solid var(--color-divider)', background: 'var(--color-cream)' }}
+          >
+            {/* Special requests */}
+            <div>
+              <label
+                className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
+                style={{ color: 'var(--color-muted)' }}
+              >
+                💬 Special Requests (optional)
+              </label>
+              <textarea
+                value={customerNote}
+                onChange={(e) => setCustomerNote(e.target.value)}
+                placeholder="Any allergies, preferences, or special requests…"
+                rows={2}
+                className="input-bordered text-sm resize-none"
+                style={{ fontStyle: 'italic' }}
+              />
+            </div>
+
+            {/* Price breakdown */}
+            <div className="space-y-1.5 text-sm">
+              <div className="flex justify-between" style={{ color: 'var(--color-muted)' }}>
+                <span>Subtotal ({items.reduce((s, i) => s + i.quantity, 0)} items)</span>
+                <span>{formatPrice(totalPrice)}</span>
+              </div>
+              <div className="flex justify-between" style={{ color: 'var(--color-muted)' }}>
+                <span>Service (5%)</span>
+                <span>{formatPrice(serviceFee)}</span>
+              </div>
+              <div
+                className="flex justify-between font-display text-lg font-bold pt-2"
+                style={{
+                  color: 'var(--color-espresso)',
+                  borderTop: '1px solid var(--color-divider)',
+                }}
+              >
+                <span>Total</span>
+                <span style={{ color: 'var(--color-primary)' }}>{formatPrice(grandTotal)}</span>
+              </div>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <p
+                className="text-xs px-3 py-2 rounded-lg animate-fade-up"
+                style={{ background: '#FEE2E2', color: '#991B1B' }}
+              >
+                {error}
+              </p>
+            )}
+
+            {/* Place order */}
+            <button
+              onClick={handlePlaceOrder}
+              disabled={loading}
+              className="btn-primary w-full py-4 text-base flex items-center justify-center gap-2 focus-gold"
+              style={{ borderRadius: '14px' }}
+              aria-label="Place your order"
+            >
+              {loading ? (
+                <>
+                  <span className="spinner" style={{ width: '18px', height: '18px' }} />
+                  <span>Placing order…</span>
+                </>
+              ) : (
+                <>
+                  <span>🍽️</span>
+                  <span>Place Order · {formatPrice(grandTotal)}</span>
+                </>
+              )}
+            </button>
+
+            <p
+              className="text-center text-xs"
+              style={{ color: 'var(--color-muted)' }}
+            >
+              🔒 Your order goes directly to our kitchen
+            </p>
+          </div>
+        )}
       </div>
+
+      {/* ── "Sending to kitchen" overlay ─────────────────── */}
+      {placing && (
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center z-50 animate-fade-in"
+          style={{ background: 'rgba(44,26,14,0.88)', backdropFilter: 'blur(6px)' }}
+        >
+          <div
+            className="text-6xl mb-4"
+            style={{ animation: 'plateSpin 1.5s ease-out forwards' }}
+          >
+            🍽️
+          </div>
+          <p
+            className="font-display text-2xl animate-fade-up"
+            style={{ color: 'var(--color-gold)', animationDelay: '0.3s' }}
+          >
+            Sending to kitchen…
+          </p>
+          <p
+            className="text-sm mt-2 animate-fade-up"
+            style={{ color: 'rgba(253,246,236,0.7)', animationDelay: '0.5s' }}
+          >
+            Please wait a moment
+          </p>
+        </div>
+      )}
     </div>
   );
 }

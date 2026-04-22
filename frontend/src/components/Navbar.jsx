@@ -2,45 +2,82 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from './Sidebar';
 
-function Navbar({ children }) {
+function Navbar({ children, title }) {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen" style={{ background: 'var(--color-cream)' }}>
+
+      {/* Mobile hamburger button */}
       <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-50 p-2 bg-primary text-white rounded-lg md:hidden"
+        onClick={() => setSidebarOpen(true)}
+        aria-label="Open menu"
+        className="fixed top-4 left-4 z-50 w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg md:hidden transition hover:scale-110"
+        style={{ background: 'var(--color-primary)' }}
       >
         ☰
       </button>
 
+      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <>
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+            className="fixed inset-0 z-40 md:hidden animate-fade-in"
+            style={{ background: 'rgba(44,26,14,0.6)', backdropFilter: 'blur(2px)' }}
             onClick={() => setSidebarOpen(false)}
           />
-          <div className="fixed left-0 top-0 z-50 md:hidden">
+          <div className="fixed left-0 top-0 z-50 md:hidden animate-slide-in-left h-full">
             <Sidebar />
           </div>
         </>
       )}
 
-      <div className="hidden md:block fixed left-0 top-0">
+      {/* Desktop sidebar */}
+      <div className="hidden md:block fixed left-0 top-0 bottom-0 z-30">
         <Sidebar />
       </div>
 
-      <div className="md:ml-64">
-        <header className="bg-white shadow px-6 py-4 flex items-center justify-between">
-          <div></div>
+      {/* Main content area */}
+      <div className="md:ml-64 flex flex-col min-h-screen">
+
+        {/* Top bar */}
+        <header
+          className="sticky top-0 z-20 flex items-center justify-between px-6 py-3.5"
+          style={{
+            background: 'rgba(253,246,236,0.92)',
+            backdropFilter: 'blur(8px)',
+            borderBottom: '1px solid var(--color-divider)',
+            boxShadow: 'var(--shadow-sm)',
+          }}
+        >
+          <h2
+            className="font-display text-lg ml-12 md:ml-0"
+            style={{ color: 'var(--color-espresso)' }}
+          >
+            {title || ''}
+          </h2>
+
           <div className="flex items-center gap-4">
-            <span className="text-gray-600">{user?.restaurantName}</span>
-            <span className="text-gray-400">|</span>
-            <span className="text-gray-500">{user?.name}</span>
+            {/* Restaurant name */}
+            <span
+              className="hidden sm:block text-sm font-semibold font-display"
+              style={{ color: 'var(--color-charcoal)' }}
+            >
+              {user?.restaurantName}
+            </span>
+            <span style={{ color: 'var(--color-divider)' }}>|</span>
+            {/* User name */}
+            <span className="text-sm" style={{ color: 'var(--color-muted)' }}>
+              {user?.name}
+            </span>
           </div>
         </header>
-        <main className="p-6">{children}</main>
+
+        {/* Page content */}
+        <main className="flex-1 p-5 sm:p-6 lg:p-8">
+          {children}
+        </main>
       </div>
     </div>
   );
