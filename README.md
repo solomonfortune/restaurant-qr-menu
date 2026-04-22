@@ -116,7 +116,9 @@ Start the frontend in a separate terminal:
 
 ```bash
 cd frontend
-npm start
+npm run build
+npm install -g serve
+serve -s build
 ```
 
 Frontend URL:
