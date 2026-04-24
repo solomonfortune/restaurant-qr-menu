@@ -18,16 +18,19 @@ const C = {
   footerBorder: '#DDD0C4',   /* thin border above footer bar         */
 };
 
-function LoginPage() {
+function RegisterPage() {
   const navigate  = useNavigate();
-  const { login, isAuthenticated, loading: authLoading } = useAuth();
+  const { register, isAuthenticated, loading: authLoading } = useAuth();
 
-  const [email,      setEmail]      = useState('');
-  const [password,   setPassword]   = useState('');
-  const [showPw,     setShowPw]     = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [error,      setError]      = useState('');
-  const [loading,    setLoading]    = useState(false);
+  const [name,           setName]           = useState('');
+  const [email,          setEmail]          = useState('');
+  const [password,       setPassword]       = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [restaurantName, setRestaurantName] = useState('');
+  const [showPw,         setShowPw]         = useState(false);
+  const [showConfirmPw,  setShowConfirmPw]  = useState(false);
+  const [error,          setError]          = useState('');
+  const [loading,        setLoading]        = useState(false);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -39,22 +42,35 @@ function LoginPage() {
     e.preventDefault();
     
     // Validation
+    if (!name.trim()) {
+      setError('Please enter your full name.');
+      return;
+    }
     if (!email.trim()) {
       setError('Please enter your email address.');
       return;
     }
-    if (!password.trim()) {
-      setError('Please enter your password.');
+    if (!restaurantName.trim()) {
+      setError('Please enter your restaurant name.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
       return;
     }
     
     setError('');
     setLoading(true);
-    const result = await login(email, password);
+    const result = await register(name, email, password, restaurantName);
     if (!result.success) {
-      setError(result.message || 'Invalid email or password.');
+      setError(result.message || 'Registration failed. Please try again.');
       setLoading(false);
     }
+    // If successful, AuthContext will handle navigation
   };
 
   return (
@@ -138,7 +154,7 @@ function LoginPage() {
               letterSpacing: '0.01em',
             }}
           >
-            Restaurant Management Admin
+            Join Our Restaurant Network
           </p>
         </div>
 
@@ -162,7 +178,7 @@ function LoginPage() {
               letterSpacing: '-0.02em',
             }}
           >
-            Welcome Back
+            Create Account
           </h2>
           <p
             style={{
@@ -172,7 +188,7 @@ function LoginPage() {
               lineHeight: 1.5,
             }}
           >
-            Manage your restaurant operations with precision.
+            Set up your restaurant management account in seconds.
           </p>
 
           {/* Error banner */}
@@ -198,6 +214,107 @@ function LoginPage() {
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
+            {/* ── Owner Name field ────────────────────────── */}
+            <div>
+              <label
+                htmlFor="name"
+                style={{
+                  display:       'block',
+                  fontSize:      '0.70rem',
+                  fontWeight:    '700',
+                  color:         C.textDark,
+                  letterSpacing: '0.10em',
+                  textTransform: 'uppercase',
+                  marginBottom:  '8px',
+                }}
+              >
+                Full Name
+              </label>
+              <div
+                style={{
+                  display:       'flex',
+                  alignItems:    'center',
+                  background:    C.inputBg,
+                  borderRadius:  '14px',
+                  padding:       '0 16px',
+                  height:        '52px',
+                  gap:           '10px',
+                }}
+              >
+                {/* Person icon */}
+                <span style={{ color: C.inputIcon, fontSize: '16px', flexShrink: 0, fontWeight: 600 }}>👤</span>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your full name"
+                  required
+                  autoComplete="name"
+                  style={{
+                    flex:        1,
+                    border:      'none',
+                    background:  'transparent',
+                    outline:     'none',
+                    fontSize:    '0.88rem',
+                    color:       C.textDark,
+                    fontFamily:  'inherit',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* ── Restaurant Name field ────────────────────────── */}
+            <div>
+              <label
+                htmlFor="restaurantName"
+                style={{
+                  display:       'block',
+                  fontSize:      '0.70rem',
+                  fontWeight:    '700',
+                  color:         C.textDark,
+                  letterSpacing: '0.10em',
+                  textTransform: 'uppercase',
+                  marginBottom:  '8px',
+                }}
+              >
+                Restaurant Name
+              </label>
+              <div
+                style={{
+                  display:       'flex',
+                  alignItems:    'center',
+                  background:    C.inputBg,
+                  borderRadius:  '14px',
+                  padding:       '0 16px',
+                  height:        '52px',
+                  gap:           '10px',
+                }}
+              >
+                {/* Fork & spoon icon */}
+                <span style={{ color: C.inputIcon, fontSize: '16px', flexShrink: 0, fontWeight: 600 }}>🍽️</span>
+                <input
+                  id="restaurantName"
+                  name="restaurantName"
+                  type="text"
+                  value={restaurantName}
+                  onChange={(e) => setRestaurantName(e.target.value)}
+                  placeholder="e.g., The Digital Diner"
+                  required
+                  style={{
+                    flex:        1,
+                    border:      'none',
+                    background:  'transparent',
+                    outline:     'none',
+                    fontSize:    '0.88rem',
+                    color:       C.textDark,
+                    fontFamily:  'inherit',
+                  }}
+                />
+              </div>
+            </div>
+
             {/* ── Email field ────────────────────────────── */}
             <div>
               <label
@@ -212,7 +329,7 @@ function LoginPage() {
                   marginBottom:  '8px',
                 }}
               >
-                Owner Email
+                Email Address
               </label>
               <div
                 style={{
@@ -233,7 +350,7 @@ function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="owner@yourrestaurant.com"
+                  placeholder="admin@yourrestaurant.com"
                   required
                   autoComplete="email"
                   style={{
@@ -251,45 +368,20 @@ function LoginPage() {
 
             {/* ── Password field ─────────────────────────── */}
             <div>
-              {/* Label row */}
-              <div
+              <label
+                htmlFor="password"
                 style={{
-                  display:        'flex',
-                  alignItems:     'center',
-                  justifyContent: 'space-between',
-                  marginBottom:   '8px',
+                  fontSize:      '0.70rem',
+                  fontWeight:    '700',
+                  color:         C.textDark,
+                  letterSpacing: '0.10em',
+                  textTransform: 'uppercase',
+                  marginBottom:  '8px',
+                  display:       'block',
                 }}
               >
-                <label
-                  htmlFor="password"
-                  style={{
-                    fontSize:      '0.70rem',
-                    fontWeight:    '700',
-                    color:         C.textDark,
-                    letterSpacing: '0.10em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Secure Key
-                </label>
-                <button
-                  type="button"
-                  style={{
-                    background:  'none',
-                    border:      'none',
-                    color:       C.orange,
-                    fontSize:    '0.78rem',
-                    fontWeight:  '600',
-                    cursor:      'pointer',
-                    padding:     0,
-                    fontFamily:  'inherit',
-                  }}
-                  onClick={() => {}}
-                  tabIndex={-1}
-                >
-                  Forgot Access?
-                </button>
-              </div>
+                Create Password
+              </label>
 
               {/* Input */}
               <div
@@ -317,7 +409,7 @@ function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••"
                   required
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   style={{
                     flex:        1,
                     border:      'none',
@@ -348,12 +440,100 @@ function LoginPage() {
                   }}
                 >
                   {showPw ? (
-                    /* Eye-off */
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                       <path d="M2 2l14 14M7.5 7.6A2 2 0 0011.4 11M5 5.2C3.5 6.3 2.3 7.5 1.5 9c1.5 3 4.5 5 7.5 5 1.3 0 2.6-.4 3.7-1M8 4c.3 0 .7 0 1 .1C12.5 4.6 15 7 16.5 9c-.4.8-1 1.6-1.7 2.2" stroke={C.inputIcon} strokeWidth="1.4" strokeLinecap="round"/>
                     </svg>
                   ) : (
-                    /* Eye */
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <path d="M1.5 9C3 6 5.8 4 9 4s6 2 7.5 5c-1.5 3-4.3 5-7.5 5S3 12 1.5 9z" stroke={C.inputIcon} strokeWidth="1.4"/>
+                      <circle cx="9" cy="9" r="2" stroke={C.inputIcon} strokeWidth="1.4"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+              <p style={{ fontSize: '0.75rem', color: C.textMuted, margin: '6px 0 0', marginLeft: '4px' }}>
+                Must be at least 6 characters
+              </p>
+            </div>
+
+            {/* ── Confirm Password field ─────────────────────────── */}
+            <div>
+              <label
+                htmlFor="confirmPassword"
+                style={{
+                  fontSize:      '0.70rem',
+                  fontWeight:    '700',
+                  color:         C.textDark,
+                  letterSpacing: '0.10em',
+                  textTransform: 'uppercase',
+                  marginBottom:  '8px',
+                  display:       'block',
+                }}
+              >
+                Confirm Password
+              </label>
+
+              {/* Input */}
+              <div
+                style={{
+                  display:      'flex',
+                  alignItems:   'center',
+                  background:   C.inputBg,
+                  borderRadius: '14px',
+                  padding:      '0 16px',
+                  height:       '52px',
+                  gap:          '10px',
+                }}
+              >
+                {/* Lock icon */}
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                  <rect x="3" y="7" width="10" height="8" rx="2" stroke={C.inputIcon} strokeWidth="1.5"/>
+                  <path d="M5 7V5a3 3 0 016 0v2" stroke={C.inputIcon} strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPw ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••••"
+                  required
+                  autoComplete="new-password"
+                  style={{
+                    flex:        1,
+                    border:      'none',
+                    background:  'transparent',
+                    outline:     'none',
+                    fontSize:    '0.88rem',
+                    color:       C.textDark,
+                    fontFamily:  'inherit',
+                    letterSpacing: showConfirmPw ? 'normal' : '0.15em',
+                  }}
+                />
+
+                {/* Eye toggle */}
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPw((v) => !v)}
+                  tabIndex={-1}
+                  aria-label={showConfirmPw ? 'Hide password' : 'Show password'}
+                  style={{
+                    background:  'none',
+                    border:      'none',
+                    cursor:      'pointer',
+                    padding:     0,
+                    color:       C.inputIcon,
+                    display:     'flex',
+                    alignItems:  'center',
+                    flexShrink:  0,
+                  }}
+                >
+                  {showConfirmPw ? (
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <path d="M2 2l14 14M7.5 7.6A2 2 0 0011.4 11M5 5.2C3.5 6.3 2.3 7.5 1.5 9c1.5 3 4.5 5 7.5 5 1.3 0 2.6-.4 3.7-1M8 4c.3 0 .7 0 1 .1C12.5 4.6 15 7 16.5 9c-.4.8-1 1.6-1.7 2.2" stroke={C.inputIcon} strokeWidth="1.4" strokeLinecap="round"/>
+                    </svg>
+                  ) : (
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                       <path d="M1.5 9C3 6 5.8 4 9 4s6 2 7.5 5c-1.5 3-4.3 5-7.5 5S3 12 1.5 9z" stroke={C.inputIcon} strokeWidth="1.4"/>
                       <circle cx="9" cy="9" r="2" stroke={C.inputIcon} strokeWidth="1.4"/>
@@ -362,48 +542,6 @@ function LoginPage() {
                 </button>
               </div>
             </div>
-
-            {/* ── Remember me checkbox ───────────────────── */}
-            <label
-              style={{
-                display:     'flex',
-                alignItems:  'center',
-                gap:         '10px',
-                cursor:      'pointer',
-                userSelect:  'none',
-              }}
-            >
-              <div
-                onClick={() => setRememberMe((v) => !v)}
-                style={{
-                  width:        '18px',
-                  height:       '18px',
-                  borderRadius: '4px',
-                  border:       `2px solid ${rememberMe ? C.orange : '#D4C4BA'}`,
-                  background:   rememberMe ? C.orange : 'transparent',
-                  display:      'flex',
-                  alignItems:   'center',
-                  justifyContent: 'center',
-                  flexShrink:   0,
-                  transition:   'all 0.2s ease',
-                  cursor:       'pointer',
-                }}
-              >
-                {rememberMe && (
-                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                    <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
-              </div>
-              <span
-                style={{
-                  fontSize: '0.86rem',
-                  color:    C.textBody,
-                }}
-              >
-                Stay signed in for 30 days
-              </span>
-            </label>
 
             {/* ── Submit button ──────────────────────────── */}
             <button
@@ -436,8 +574,7 @@ function LoginPage() {
             >
               {loading ? (
                 <>
-                  <span>Entering Dashboard</span>
-                  {/* Spinner ring — exactly as in design (right side) */}
+                  <span>Creating Account</span>
                   <div
                     style={{
                       width:           '22px',
@@ -453,8 +590,7 @@ function LoginPage() {
                 </>
               ) : (
                 <>
-                  <span>Entering Dashboard</span>
-                  {/* Static ring icon when idle — matches design */}
+                  <span>Create My Account</span>
                   <div
                     style={{
                       width:        '22px',
@@ -484,10 +620,10 @@ function LoginPage() {
                 margin:       '0 0 6px',
               }}
             >
-              New to the system?
+              Already have an account?
             </p>
             <Link
-              to="/admin/register"
+              to="/admin/login"
               style={{
                 background:  'none',
                 border:      'none',
@@ -503,7 +639,7 @@ function LoginPage() {
                 textDecoration: 'none',
               }}
             >
-              Register your Restaurant
+              Sign in to your account
               <span style={{ fontSize: '14px' }}>›</span>
             </Link>
           </div>
@@ -544,7 +680,6 @@ function LoginPage() {
               textAlign:     'center',
             }}
           >
-            {/* Split into two lines like the design */}
             {item.includes(' ') ? (
               <>
                 {item.split(' ')[0]}
@@ -574,4 +709,4 @@ function LoginPage() {
   );
 }
 
-export default LoginPage;
+export default RegisterPage;

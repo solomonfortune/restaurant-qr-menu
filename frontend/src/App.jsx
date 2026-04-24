@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import MenuPage from './pages/customer/MenuPage';
 import OrderSuccessPage from './pages/customer/OrderSuccessPage';
 import LoginPage from './pages/admin/LoginPage';
+import RegisterPage from './pages/admin/RegisterPage';
 import DashboardPage from './pages/admin/DashboardPage';
 import MenuManagementPage from './pages/admin/MenuManagementPage';
 import CategoryPage from './pages/admin/CategoryPage';
@@ -16,6 +17,7 @@ function App() {
       <Route path="/menu" element={<MenuPage />} />
       <Route path="/order-success" element={<OrderSuccessPage />} />
       <Route path="/admin/login" element={<LoginPage />} />
+      <Route path="/admin/register" element={<RegisterPage />} />
       <Route path="/admin/dashboard" element={
         <ProtectedRoute>
           <DashboardPage />

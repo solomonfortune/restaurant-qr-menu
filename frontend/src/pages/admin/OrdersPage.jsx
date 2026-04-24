@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
-import Navbar from '../../components/Navbar';
-import OrderCard from '../../components/OrderCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 /* Web Audio chime — no audio file needed */
@@ -23,116 +22,240 @@ function playChime() {
   } catch (_) { /* AudioContext blocked — silent fail */ }
 }
 
-/* Toast notification */
-function Toast({ message, onClose }) {
+/* Notification Toast */
+function Notification({ message, onClose, tableNumber }) {
   useEffect(() => {
-    const t = setTimeout(onClose, 4500);
+    const t = setTimeout(onClose, 5000);
     return () => clearTimeout(t);
   }, [onClose]);
 
   return (
     <div
-      className="fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-lg animate-toast-in"
+      className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 px-6 py-4 rounded-full shadow-lg flex items-center justify-between gap-4 animate-slide-up"
       style={{
-        background: 'var(--color-primary)',
-        color: 'var(--color-gold-light)',
-        boxShadow: 'var(--shadow-float)',
-        maxWidth: '320px',
+        background: '#2C2C2C',
+        color: '#FFFFFF',
+        maxWidth: '90%',
+        width: '100%',
+        maxWidth: '400px',
       }}
     >
-      <span className="text-xl animate-heartbeat">🔔</span>
-      <p className="font-display text-sm flex-1">{message}</p>
+      <div className="flex items-center gap-3 flex-1">
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ background: '#EA4A0A' }}
+        >
+          <span className="text-lg">📍</span>
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-bold">{message}</p>
+          <p className="text-xs opacity-80">Table {tableNumber} is waiting</p>
+        </div>
+      </div>
       <button
         onClick={onClose}
-        className="text-lg opacity-70 hover:opacity-100 transition"
+        className="text-lg opacity-60 hover:opacity-100 transition flex-shrink-0"
         aria-label="Dismiss"
       >
-        ✕
+        ›
       </button>
     </div>
   );
 }
 
-/* Column header */
-function ColumnHeader({ label, count, accent }) {
+/* Individual Order Card */
+function OrderCard({ order, onUpdate, kitchenOnline }) {
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const getStatusInfo = (status) => {
+    const statusMap = {
+      pending: { label: 'PENDING', color: '#FCD34D', textColor: '#78350F' },
+      preparing: { label: 'PREPARING', color: '#FED7AA', textColor: '#78350F' },
+      ready: { label: 'READY', color: '#86EFAC', textColor: '#166534' },
+      completed: { label: 'COMPLETED', color: '#D1D5DB', textColor: '#374151' },
+    };
+    return statusMap[status] || statusMap.pending;
+  };
+
+  const getTimeAgo = (timestamp) => {
+    const now = new Date();
+    const orderTime = new Date(timestamp);
+    const diffMs = now - orderTime;
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Just now';
+    if (diffMins === 1) return '1m ago';
+    return `${diffMins}m ago`;
+  };
+
+  const handleConfirmOrder = async () => {
+    if (order.status !== 'pending') return;
+    setActionLoading(true);
+    try {
+      await api.patch(`/orders/${order._id}`, { status: 'preparing' });
+      onUpdate();
+    } catch (error) {
+      console.error('Error updating order:', error);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleMarkReady = async () => {
+    if (order.status !== 'preparing') return;
+    setActionLoading(true);
+    try {
+      await api.patch(`/orders/${order._id}`, { status: 'ready' });
+      onUpdate();
+    } catch (error) {
+      console.error('Error updating order:', error);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const statusInfo = getStatusInfo(order.status);
+  const isPending = order.status === 'pending';
+  const isPreparing = order.status === 'preparing';
+
   return (
     <div
-      className="flex items-center justify-between px-4 py-3 rounded-xl mb-3"
-      style={{ background: `${accent}12`, border: `1px solid ${accent}30` }}
+      className="rounded-3xl p-6 shadow-md transition-all"
+      style={{ background: '#FFFFFF', border: '1px solid #E8D5B7' }}
     >
-      <h2
-        className="font-display text-base font-bold"
-        style={{ color: 'var(--color-espresso)' }}
-      >
-        {label}
-      </h2>
-      <span
-        className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold font-display"
-        style={{ background: accent, color: 'white' }}
-      >
-        {count}
-      </span>
+      {/* Header: Table + Order ID + Status */}
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <p className="text-xs font-bold uppercase" style={{ color: '#8C7B6B' }}>
+            TABLE {order.tableNumber}
+          </p>
+          <h3 className="text-2xl font-black" style={{ color: '#2C1A0E' }}>
+            #{order._id.slice(-4).toUpperCase()}
+          </h3>
+        </div>
+        <div
+          className="px-4 py-2 rounded-full text-xs font-bold uppercase"
+          style={{ background: statusInfo.color, color: statusInfo.textColor }}
+        >
+          {statusInfo.label}
+        </div>
+      </div>
+
+      {/* Items list */}
+      <div className="space-y-2 mb-5 pb-5 border-b" style={{ borderColor: '#E8D5B7' }}>
+        {order.items.map((item, idx) => (
+          <div key={idx} className="flex items-start gap-3">
+            <span className="text-xl flex-shrink-0">
+              {item.category === 'Drinks' ? '🥤' : '🍽️'}
+            </span>
+            <div className="flex-1">
+              <p className="font-semibold text-sm" style={{ color: '#2C1A0E' }}>
+                {item.name} x{item.quantity}
+              </p>
+              {item.specialInstructions && (
+                <p className="text-xs mt-1" style={{ color: '#8C7B6B' }}>
+                  Note: {item.specialInstructions}
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Time + Total */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-1.5" style={{ color: '#EA4A0A' }}>
+          <span className="text-sm">⏱️</span>
+          <span className="text-sm font-semibold">{getTimeAgo(order.createdAt)}</span>
+        </div>
+        <div>
+          <p className="text-xs" style={{ color: '#8C7B6B' }}>Total</p>
+          <p className="text-lg font-black" style={{ color: '#EA4A0A' }}>
+            UGX {order.totalPrice?.toLocaleString() || '0'}
+          </p>
+        </div>
+      </div>
+
+      {/* Action buttons */}
+      {isPending && (
+        <button
+          onClick={handleConfirmOrder}
+          disabled={actionLoading}
+          className="w-full py-3.5 rounded-2xl font-bold uppercase text-sm transition-all"
+          style={{
+            background: '#EA4A0A',
+            color: '#FFFFFF',
+            opacity: actionLoading ? 0.7 : 1,
+            cursor: actionLoading ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {actionLoading ? 'Processing...' : 'Confirm Order'}
+        </button>
+      )}
+
+      {isPreparing && (
+        <button
+          onClick={handleMarkReady}
+          disabled={actionLoading}
+          className="w-full py-3.5 rounded-2xl font-bold uppercase text-sm transition-all"
+          style={{
+            background: '#D1D5DB',
+            color: '#374151',
+            opacity: actionLoading ? 0.7 : 1,
+            cursor: actionLoading ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {actionLoading ? 'Processing...' : 'Mark Ready'}
+        </button>
+      )}
+
+      {order.status === 'ready' && (
+        <div
+          className="w-full py-3.5 rounded-2xl font-bold uppercase text-sm text-center"
+          style={{ background: '#86EFAC', color: '#166534' }}
+        >
+          Ready for Pickup
+        </div>
+      )}
     </div>
   );
 }
-
-/* Empty column placeholder */
-function EmptyColumn({ label }) {
-  return (
-    <div
-      className="flex flex-col items-center justify-center py-10 rounded-xl text-center"
-      style={{ border: '1.5px dashed var(--color-divider)' }}
-    >
-      <span className="text-3xl mb-2 opacity-40">📭</span>
-      <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
-        No {label.toLowerCase()} orders
-      </p>
-    </div>
-  );
-}
-
-const STATUS_GROUPS = [
-  { key: 'pending',   label: 'Pending',   accent: '#D97706' },
-  { key: 'preparing', label: 'Preparing', accent: '#EA580C' },
-  { key: 'ready',     label: 'Ready',     accent: '#16A34A' },
-  { key: 'completed', label: 'Completed', accent: '#6B7280' },
-];
 
 function OrdersPage() {
+  const { user } = useAuth();
   const [orders, setOrders]           = useState([]);
   const [loading, setLoading]         = useState(true);
-  const [toast, setToast]             = useState(null);
-  const [pulsing, setPulsing]         = useState(false);
-  const prevPendingCount              = useRef(0);
+  const [notification, setNotification] = useState(null);
   const prevOrderIds                  = useRef(new Set());
+  const [kitchenOnline, setKitchenOnline] = useState(true);
 
   const fetchOrders = useCallback(async () => {
     try {
       const { data } = await api.get('/orders');
       const newOrders     = data.orders || [];
-      const pendingCount  = newOrders.filter((o) => o.status === 'pending').length;
+      
+      /* Sort orders: pending first, then preparing, then others */
+      const sorted = newOrders.sort((a, b) => {
+        const statusOrder = { pending: 0, preparing: 1, ready: 2, completed: 3, cancelled: 4 };
+        return (statusOrder[a.status] || 5) - (statusOrder[b.status] || 5);
+      });
 
       /* Detect brand-new order IDs */
-      const newIds = newOrders.map((o) => o._id);
+      const newIds = sorted.map((o) => o._id);
       const isNew  = newIds.some((id) => !prevOrderIds.current.has(id));
 
       if (isNew && prevOrderIds.current.size > 0) {
         playChime();
-        setPulsing(true);
-        setTimeout(() => setPulsing(false), 3000);
-        const newest = newOrders.find((o) => !prevOrderIds.current.has(o._id));
+        const newest = sorted.find((o) => !prevOrderIds.current.has(o._id));
         if (newest) {
-          setToast(`New order from Table ${newest.tableNumber}! 🍽️`);
-          /* Flash browser tab */
-          const orig = document.title;
-          document.title = `🔔 New Order! | ${orig}`;
-          setTimeout(() => { document.title = orig; }, 5000);
+          setNotification({
+            message: 'New Order Received!',
+            tableNumber: newest.tableNumber
+          });
         }
       }
 
-      prevOrderIds.current   = new Set(newIds);
-      prevPendingCount.current = pendingCount;
-      setOrders(newOrders);
+      prevOrderIds.current = new Set(newIds);
+      setOrders(sorted);
     } catch (err) {
       console.error('Orders fetch failed:', err);
     } finally {
@@ -146,102 +269,156 @@ function OrdersPage() {
     return () => clearInterval(interval);
   }, [fetchOrders]);
 
-  const grouped = STATUS_GROUPS.reduce((acc, g) => {
-    acc[g.key] = orders.filter((o) => o.status === g.key);
-    return acc;
-  }, {});
-
   if (loading) return <LoadingSpinner />;
 
+  const pendingOrders = orders.filter(o => o.status === 'pending');
+  const preparingOrders = orders.filter(o => o.status === 'preparing');
+  const activeOrders = [...pendingOrders, ...preparingOrders];
+
   return (
-    <Navbar title="Live Orders">
-
-      {/* Toast */}
-      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
-
-      {/* Page header */}
-      <div className="flex items-center justify-between mb-6 animate-fade-up">
-        <div className="flex items-center gap-3">
-          <h1
-            className="font-display text-2xl"
-            style={{ color: 'var(--color-espresso)' }}
-          >
-            Live Orders
-          </h1>
-          {/* Live pulse indicator */}
-          <div className="flex items-center gap-1.5">
-            <span
-              className="w-2 h-2 rounded-full"
-              style={{
-                background: pulsing ? 'var(--color-primary)' : '#16A34A',
-                animation: 'pulse 1.5s ease-in-out infinite',
-              }}
-            />
-            <span className="text-xs" style={{ color: 'var(--color-muted)' }}>
-              {pulsing ? 'New order!' : 'Live'}
-            </span>
-          </div>
-        </div>
-        <button
-          onClick={fetchOrders}
-          className="btn-outline-gold text-xs px-4 py-2"
-          aria-label="Refresh orders"
-        >
-          🔄 Refresh
+    <div
+      className="min-h-screen pb-24 md:pb-8"
+      style={{ background: '#FDF6EC' }}
+    >
+      {/* Top Header with Restaurant Name */}
+      <header
+        className="sticky top-0 z-40 px-4 py-4 flex items-center justify-between"
+        style={{ background: '#FDF6EC', borderBottom: '1px solid #E8D5B7' }}
+      >
+        <button className="text-2xl p-2 -ml-2 md:hidden" aria-label="Menu">
+          ☰
         </button>
-      </div>
+        <h1 className="font-black text-xl flex-1 text-center md:text-left" style={{ color: '#2C1A0E' }}>
+          {user?.restaurantName}
+        </h1>
+        <button className="text-2xl p-2 -mr-2" aria-label="Cart">
+          🛒
+        </button>
+      </header>
 
-      {/* Kanban columns */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {STATUS_GROUPS.map((group, i) => (
-          <div
-            key={group.key}
-            className="animate-fade-up"
-            style={{ animationDelay: `${i * 0.08}s` }}
-          >
-            <ColumnHeader
-              label={group.label}
-              count={grouped[group.key].length}
-              accent={group.accent}
-            />
+      {/* Main Content */}
+      <div className="px-4 py-6 max-w-4xl mx-auto">
 
-            <div className="space-y-3">
-              {grouped[group.key].length === 0 ? (
-                <EmptyColumn label={group.label} />
-              ) : (
-                grouped[group.key].map((order) => (
-                  <OrderCard
-                    key={order._id}
-                    order={order}
-                    onUpdate={fetchOrders}
-                  />
-                ))
-              )}
+        {/* Page Title */}
+        <div className="mb-8">
+          <h2 className="text-4xl font-black mb-2" style={{ color: '#2C1A0E' }}>
+            Live Orders
+          </h2>
+          <p className="text-base" style={{ color: '#8C7B6B' }}>
+            Manage your kitchen flow in real-time.
+          </p>
+        </div>
+
+        {/* Kitchen Status */}
+        <div className="mb-8 inline-flex items-center gap-2 px-4 py-2.5 rounded-full" 
+          style={{ background: '#C6F6D5' }}>
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#22C55E' }}></span>
+          <span className="font-semibold text-sm" style={{ color: '#166534' }}>Kitchen Online</span>
+        </div>
+
+        {/* Orders List */}
+        <div className="space-y-4">
+          {activeOrders.length === 0 ? (
+            <div
+              className="rounded-3xl p-12 text-center"
+              style={{ background: '#FFFFFF', border: '2px dashed #E8D5B7' }}
+            >
+              <p className="text-4xl mb-3">😌</p>
+              <p className="text-lg font-semibold mb-1" style={{ color: '#2C1A0E' }}>
+                No active orders
+              </p>
+              <p className="text-sm" style={{ color: '#8C7B6B' }}>
+                Waiting for customers to place orders...
+              </p>
             </div>
-          </div>
-        ))}
+          ) : (
+            activeOrders.map((order) => (
+              <OrderCard
+                key={order._id}
+                order={order}
+                onUpdate={fetchOrders}
+                kitchenOnline={kitchenOnline}
+              />
+            ))
+          )}
+
+          {/* Completed and Ready Orders - Collapsible */}
+          {(orders.filter(o => o.status === 'ready' || o.status === 'completed').length > 0) && (
+            <details className="mt-8">
+              <summary
+                className="cursor-pointer font-semibold py-3 px-4 rounded-lg inline-block"
+                style={{ background: '#FEF3C7', color: '#78350F' }}
+              >
+                ✓ Completed ({orders.filter(o => o.status === 'ready' || o.status === 'completed').length})
+              </summary>
+              <div className="space-y-4 mt-4">
+                {orders
+                  .filter(o => o.status === 'ready' || o.status === 'completed')
+                  .map((order) => (
+                    <OrderCard
+                      key={order._id}
+                      order={order}
+                      onUpdate={fetchOrders}
+                      kitchenOnline={kitchenOnline}
+                    />
+                  ))}
+              </div>
+            </details>
+          )}
+        </div>
       </div>
 
-      {/* Cancelled orders — collapsible */}
-      {orders.filter((o) => o.status === 'cancelled').length > 0 && (
-        <details className="mt-8 animate-fade-up">
-          <summary
-            className="cursor-pointer text-sm font-semibold py-2 px-4 rounded-xl inline-flex items-center gap-2"
-            style={{ background: '#FEE2E2', color: '#991B1B' }}
-          >
-            ✕ Cancelled ({orders.filter((o) => o.status === 'cancelled').length})
-          </summary>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-3">
-            {orders
-              .filter((o) => o.status === 'cancelled')
-              .map((order) => (
-                <OrderCard key={order._id} order={order} onUpdate={fetchOrders} />
-              ))}
-          </div>
-        </details>
+      {/* Notification Toast */}
+      {notification && (
+        <Notification
+          message={notification.message}
+          tableNumber={notification.tableNumber}
+          onClose={() => setNotification(null)}
+        />
       )}
-    </Navbar>
+
+      {/* Bottom Navigation - Mobile Only */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 md:hidden z-40 grid grid-cols-4 gap-1 p-2"
+        style={{ background: '#FFFFFF', borderTop: '1px solid #E8D5B7' }}
+      >
+        <button className="py-3 px-2 flex flex-col items-center gap-2 rounded-xl transition"
+          style={{ background: '#EA4A0A', color: '#FFFFFF' }}>
+          <span className="text-xl">🍴</span>
+          <span className="text-xs font-semibold">MENU</span>
+        </button>
+        <button className="py-3 px-2 flex flex-col items-center gap-2 rounded-xl transition hover:bg-gray-100">
+          <span className="text-xl">📋</span>
+          <span className="text-xs font-semibold" style={{ color: '#2C1A0E' }}>ORDER</span>
+        </button>
+        <button className="py-3 px-2 flex flex-col items-center gap-2 rounded-xl transition hover:bg-gray-100">
+          <span className="text-xl">☎️</span>
+          <span className="text-xs font-semibold" style={{ color: '#2C1A0E' }}>CALL</span>
+        </button>
+        <button className="py-3 px-2 flex flex-col items-center gap-2 rounded-xl transition hover:bg-gray-100">
+          <span className="text-xl">💰</span>
+          <span className="text-xs font-semibold" style={{ color: '#2C1A0E' }}>BILL</span>
+        </button>
+      </nav>
+
+      <style>{`
+        @keyframes slide-up {
+          from {
+            transform: translateY(100px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        .animate-slide-up {
+          animation: slide-up 0.3s ease-out;
+        }
+      `}</style>
+    </div>
   );
 }
+
 
 export default OrdersPage;
