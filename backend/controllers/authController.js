@@ -93,12 +93,6 @@ const getMe = async (req, res) => {
   }
 };
 
-User.prototype.getSignedJwtToken = function() {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '7d'
-  });
-};
-
 module.exports = {
   register,
   login,

@@ -44,4 +44,11 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
+userSchema.methods.getSignedJwtToken = function() {
+  const jwt = require('jsonwebtoken');
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRE || '7d'
+  });
+};
+
 module.exports = mongoose.model('User', userSchema);
