@@ -1,77 +1,163 @@
 # QR Menu System
 
-A full-stack QR code restaurant menu and ordering system built with React, Express, and MongoDB.
+A full-stack QR code-based digital menu and ordering platform for restaurants. Customers scan a table QR code to view a digital menu, place orders, and track order status, while restaurant staff manage menu items, categories, tables, and incoming orders from an admin dashboard.
 
-Customers can scan a table QR code to browse the menu and place orders. Restaurant staff can log in to an admin dashboard to manage menu items, categories, tables, and incoming orders.
+This project is built with React on the frontend, Node.js/Express on the backend, and MongoDB for persistent data storage.
+
+## Overview
+
+The application is designed for restaurants that want a modern contactless dining experience without requiring customers to download an app.
+
+- Customers can browse restaurant menus by table
+- Orders can be placed directly from a browser
+- Admin users can log in to manage the restaurant catalog
+- QR codes can be generated for each dining table
+- Order statuses can be reviewed and updated by staff
 
 ## Features
 
+### Customer Experience
 - QR-based table menu access
-- Customer-facing digital menu
-- Cart and order placement flow
-- Admin authentication with JWT
-- Dashboard for restaurant management
-- Menu item and category management
+- Customer-facing digital menu with categories and pricing
+- Add-to-cart and order placement flow
+- Order confirmation page
+- Table-aware menu access via query parameters
+
+### Admin Experience
+- Secure admin login using JWT authentication
+- Dashboard overview for statistics and activity
+- Menu item management
+- Category management
 - Table management with QR code generation
 - Order tracking and status updates
+- Cloudinary-ready image support for menu items
 
 ## Tech Stack
 
-- Frontend: React, React Router, Axios
-- Backend: Node.js, Express
-- Database: MongoDB with Mongoose
-- Authentication: JWT
-- Media upload support: Cloudinary
+### Frontend
+- React 18
+- React Router DOM
+- Axios
+- QR code rendering support
+- React Scripts
 
-## Project Structure
+### Backend
+- Node.js
+- Express.js
+- MongoDB with Mongoose
+- JWT authentication
+- bcryptjs password hashing
+- Cloudinary for media uploads
+- CORS and dotenv support
+
+### Database
+- MongoDB
+
+## Repository Structure
 
 ```text
-qr-menu-system/
-  backend/    Express API, MongoDB models, controllers, routes
-  frontend/   React client for customers and admins
+restaurant-qr-menu/
+├── backend/
+│   ├── config/
+│   ├── controllers/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
+│   ├── utils/
+│   ├── .env.example
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── seed.js
+│   └── server.js
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   ├── .env
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── tailwind.config.js
+│   ├── postcss.config.js
+│   └── build/
+├── .gitignore
+├── README.md
+├── package-lock.json
+└── .github/
 ```
 
-## Main Routes
+## Application Flow
 
-Frontend routes:
+### Customer side
+Customers access the menu through a QR link such as:
 
-- `/menu` - customer menu page
-- `/order-success` - order confirmation page
-- `/admin/login` - admin sign-in
-- `/admin/dashboard` - dashboard overview
-- `/admin/menu` - manage menu items
-- `/admin/categories` - manage categories
-- `/admin/orders` - manage incoming orders
-- `/admin/tables` - manage tables and QR codes
-
-Backend API routes:
-
-- `/api/auth`
-- `/api/menu`
-- `/api/orders`
-- `/api/tables`
-
-## Getting Started
-
-### 1. Install dependencies
-
-Install backend packages:
-
-```bash
-cd backend
-npm install
+```text
+http://localhost:3000/menu?table=1&owner=<restaurant-owner-id>
 ```
 
-Install frontend packages:
+This is generated from the table record and points the customer to the menu page for that specific table.
 
-```bash
-cd frontend
-npm install
+### Admin side
+Admin users log in at:
+
+```text
+http://localhost:3000/admin/login
 ```
 
-### 2. Configure environment variables
+After authentication, staff can manage:
+- Dashboard overview
+- Menu items
+- Categories
+- Table QR codes
+- Orders
 
-Create `backend/.env` using `backend/.env.example`:
+## Default Routes
+
+### Frontend routes
+- `/` → redirects to `/admin/login`
+- `/menu` → customer menu page
+- `/order-success` → order confirmation page
+- `/admin/login` → admin login
+- `/admin/register` → admin registration
+- `/admin/dashboard` → admin overview
+- `/admin/menu` → menu management
+- `/admin/categories` → category management
+- `/admin/orders` → order list and updates
+- `/admin/tables` → table management and QR generation
+
+### Backend API routes
+
+#### Authentication
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me` (protected)
+
+#### Menu
+- `GET /api/menu/public`
+- `GET /api/menu/categories` (protected)
+- `POST /api/menu/categories` (protected)
+- `PUT /api/menu/categories/:id` (protected)
+- `DELETE /api/menu/categories/:id` (protected)
+- `GET /api/menu/items` (protected)
+- `POST /api/menu/items` (protected)
+- `PUT /api/menu/items/:id` (protected)
+- `DELETE /api/menu/items/:id` (protected)
+- `PATCH /api/menu/items/:id/toggle` (protected)
+
+#### Orders
+- `POST /api/orders`
+- `GET /api/orders` (protected)
+- `PATCH /api/orders/:id/status` (protected)
+- `GET /api/orders/stats` (protected)
+
+#### Tables
+- `GET /api/tables` (protected)
+- `POST /api/tables` (protected)
+- `PUT /api/tables/:id` (protected)
+- `DELETE /api/tables/:id` (protected)
+
+## Environment Configuration
+
+### Backend
+Create a `backend/.env` file based on `backend/.env.example`:
 
 ```env
 PORT=5000
@@ -84,76 +170,158 @@ CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 FRONTEND_URL=http://localhost:3000
 ```
 
-Create `frontend/.env`:
+The project includes a default example file:
+
+```env
+PORT=5000
+MONGO_URI=your_mongodb_atlas_connection_string
+JWT_SECRET=your_super_secret_jwt_key_change_this
+JWT_EXPIRE=7d
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+FRONTEND_URL=http://localhost:3000
+```
+
+### Frontend
+Create a `frontend/.env` file:
 
 ```env
 REACT_APP_API_URL=http://localhost:5000/api
 ```
 
-### 3. Seed the database
+## Getting Started
 
-From the `backend` folder:
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/solomonfortune/restaurant-qr-menu.git
+cd restaurant-qr-menu
+```
+
+### 2. Install backend dependencies
+
+```bash
+cd backend
+npm install
+```
+
+### 3. Install frontend dependencies
+
+```bash
+cd ../frontend
+npm install
+```
+
+### 4. Start MongoDB
+Make sure your MongoDB instance is running and the connection string in `backend/.env` is valid.
+
+### 5. Seed the database
+From the `backend` directory:
 
 ```bash
 npm run seed
 ```
 
-Seeded admin login:
+This script creates sample restaurant data, including an admin account.
 
-- Email: `admin@digitaldiner.com`
-- Password: `password123`
-
-### 4. Start the app
-
-Start the backend:
+### 6. Start the backend
 
 ```bash
 cd backend
 npm run dev
 ```
 
-Start the frontend in a separate terminal:
+The API runs by default on:
+
+```text
+http://localhost:5000
+```
+
+### 7. Start the frontend
+Open a new terminal and run:
 
 ```bash
 cd frontend
-npm run build
-npm install -g serve
-serve -s build
+npm start
 ```
 
-Frontend URL:
+The React app runs by default on:
 
-- `http://localhost:3000`
+```text
+http://localhost:3000
+```
 
-Backend URL:
+## Default Admin Credentials
 
-- `http://localhost:5000`
+After running the seed script, use the following login:
+
+- Email: `admin@digitaldiner.com`
+- Password: `password123`
 
 ## Available Scripts
 
-Backend:
+### Backend scripts
+```bash
+npm start
+```
+Runs the app in production mode.
 
-- `npm start` - start the API with Node
-- `npm run dev` - start the API with Nodemon
-- `npm run seed` - populate demo data
+```bash
+npm run dev
+```
+Runs the server with nodemon for live reload during development.
 
-Frontend:
+```bash
+npm run seed
+```
+Seeds the database with demo restaurant data and an admin user.
 
-- `npm start` - start the React development server
-- `npm run build` - create a production build
-- `npm test` - run tests
+### Frontend scripts
+```bash
+npm start
+```
+Starts the React development server.
+
+```bash
+npm run build
+```
+Builds the production bundle for deployment.
+
+```bash
+npm test
+```
+Runs project tests if configured.
 
 ## Notes
 
 - The frontend expects the API at `http://localhost:5000/api` unless overridden by `REACT_APP_API_URL`.
-- QR code links are generated using `FRONTEND_URL`, so keep it aligned with the address where the frontend is running.
-- Cloudinary is required only if you want image upload features to work.
+- QR codes are generated using `FRONTEND_URL` and should point to the frontend URL where customers will access the menu.
+- Cloudinary support is optional but required for menu-image uploads to function properly.
+- This project is designed around a restaurant owner/admin model, where one admin manages menu items, categories, tables, and orders.
 
-## Future Improvements
+## Potential Future Enhancements
 
+- Real-time order updates with WebSockets
 - Payment integration
-- Real-time order updates
 - Role-based staff accounts
 - Printable kitchen tickets
-- Analytics and reporting
+- Sales analytics and dashboard reporting
+- Multi-restaurant support
 
+## License
+
+This project is currently distributed without a formal license file. If you plan to publish or reuse it publicly, consider adding an appropriate open-source license such as MIT.
+
+## Contributing
+
+Contributions are welcome. For local development:
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Open a pull request
+
+## Contact
+
+For questions or collaboration, use the repository's GitHub issue tracker or contact the project owner through the repository profile.
